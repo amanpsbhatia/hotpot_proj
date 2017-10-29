@@ -56,6 +56,7 @@ void insert_into_index(int key,int value,int (*fn)(int))
 			pos = f->pos;
 		} else {
 			//already insert_into_index
+			return;
 		}
 		*pos = key;
 		*(pos+1) = value;
