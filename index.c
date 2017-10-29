@@ -62,3 +62,47 @@ void insert_into_index(int key,int value,int (*fn)(int))
 		*(pos+1) = value;
 		
 }
+
+
+
+//lock index entries before statrting transaction
+
+
+int* lock_index_entries(int* keys,int (*fn)(),int max)
+{
+		assert(index_start != NULL);
+		int i;
+		int num_keys = sizeof(keys)/sizeof(int);
+		int* addresses = (int*)malloc(sizeof(int)*num_keys);
+		for(i=0;i<num_keys;i++) {
+			struct find* f = search(keys[i],fn,max);
+			*(addresses+i) = f->pos; 
+		}
+		return addresses;
+}
+
+// init xact = init xact header, xact area, 
+// assume one thread only
+// xact_struct = xact_header + xact_areas;
+
+static struct dsnvm_addr_len *xact_areas;
+static void *xact_struct;
+
+static void init_index_xact_areas(int* keys,int (*fn)(),int max)
+{
+	int* index_addr = lock_index_entries(keys,fn,max);
+	malloc_size = sizeof(struct dsnvm_xact_header);
+	malloc_size += NR_XACT_AREAS*sizeof(struct dsnvm_addr_len);
+
+	//NR_XACT_AREAS is sizeof(index_addr)/sizeof(int) for index entries
+	xact_struct = malloc(malloc_size);
+	struct dsnvm_xact_header* header = (struct dsnvm_xact_header*)xact_struct;
+	header->rep_degree = NR_REPLICA;
+	header->xact_id = -1;
+
+	xact_areas = xact_struct + sizeof(struct dsnvm_xact_header);
+	for (i = 0; i < NR_XACT_AREAS; i++) {
+		xact_areas[i].addr = *(index_addr+i)
+		xact_areas[i].len = sizeof(int)*2;
+	}
+}
