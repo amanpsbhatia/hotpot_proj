@@ -106,3 +106,16 @@ static void init_index_xact_areas(int* keys,int (*fn)(),int max)
 		xact_areas[i].len = sizeof(int)*2;
 	}
 }
+
+
+static int validate_for_put(int* offsets)
+{
+	int i;
+	int size = sizeof(offsets)/sizeof(int);
+	for(i=0;i<size;i++) {
+		int value = *(index_start+offsets[i]+1);
+		if(value != -1)
+			return -1;
+	}
+	return 1;
+}
