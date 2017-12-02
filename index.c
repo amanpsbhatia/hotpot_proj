@@ -39,7 +39,7 @@ struct find* search(int key,int (*fn)(int),int max)
 			f->pos = start_pos;
 			return f;
 		}
-		start_pos += 2;
+		start_pos += 2*(sizeof(int));
 	}
 	f->found = -1;
 	f->pos = start_pos;
