@@ -16,6 +16,11 @@ struct commit_area_struct {
   int length;
 };
 
+struct index_entry {
+  int used;
+  int key;
+  int* offset;
+}
 //Client facing structs
 
 struct put_op_in {
@@ -54,5 +59,5 @@ struct delete_op_in {
   int* log_pt;
   int log_entry_size;
   int* index_pt;
-  int index_entry_size;  
+  int index_entry_size;
 }
