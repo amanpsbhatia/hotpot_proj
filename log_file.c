@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include "declaration.h"
+#include "log_file.h"
+
+extern int* put_fetch_address(struct put_op_in* put_op);
 
 int *log_size;
 int *log;
@@ -50,6 +53,10 @@ int *log;
   void get_fetch_address(struct get_op_in* get_op) {
     get_op->index_pt = get_index_fetch_address(put_op->key);
     get_op->index_entry_size = sizeof(struct index_entry);
+    if (get_op->index_pt == -1) {
+      get_op->status = -1;
+      return;
+    }
     struct index_entry* entry = get_op->index_pt;
 
     //TODO : Handle case when the key does not exist or is deleted
@@ -57,6 +64,7 @@ int *log;
       return;
     get_op->log_pt = entry->offset;
     get_op->log_entry_size = sizeof(struct kv_pair);
+    get_op->status = 0;
   }
 
 // Validate apis
