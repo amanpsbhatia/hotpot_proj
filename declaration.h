@@ -16,11 +16,11 @@ struct commit_area_struct {
   int length;
 };
 
-struct index_entry {
+typedef struct index_entry {
   int used;
   int key;
   int* offset;
-};
+}index_entry;
 //Client facing structs
 
 struct put_op_in {
