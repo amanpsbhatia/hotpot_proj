@@ -49,7 +49,7 @@ void do_steps(struct put_op_in* put_op, struct get_op_in* get_op) {
   validate_get(get_op);
 
   //TODO : handle cases if validateion has failed
-  
+
   execute_put(put_op);
   execute_get(get_op);
 
@@ -70,4 +70,80 @@ int do_txn(struct put_op_s* put_op, struct get_op_s* get_op ) {
   get_op->status = p2.status;
   get_op->value = p2.value;
   return 0;
+}
+
+
+int do_put_txn(struct put_op_s* put_op) {
+  struct put_op_in p1 = (struct put_op_in)malloc(sizeof(struct put_op_in));
+  p1.key = put_op->key;
+  p1.value = put_op->value;
+  p1.status = 0;
+
+  do_steps(&p1);
+
+  put_op->status = p1.status;
+  
+  return 0;
+}
+
+void do_put_steps(struct put_op_in* put_op) {
+  int* log_address = put_fetch_address(put_op);
+
+  struct commit_area_struct areas[3];
+  areas[0].address = put_op->log_pt;
+  areas[0].length = put_op->log_entry_size;
+
+  areas[1].address = put_op->index_pt;
+  areas[1].length = put_op->index_entry_size;
+
+  areas[2].address = log_address;
+  areas[2].length = sizeof(int)
+
+  acquire_lock(areas, 3);
+
+  validate_put(put_op);
+
+  //TODO : handle cases if validateion has failed
+
+  execute_put(put_op);
+
+  release_lock();
+
+}
+
+int do_get_txn(struct get_op_s* get_op) {
+  struct get_op_in p2 = (struct get_op_in)malloc(sizeof(struct get_op_in));
+  p2.key = get_op->key;
+  p2.status = 0;
+
+  do_steps(&p1, &p2);
+
+  get_op->status = p2.status;
+  get_op->value = p2.value;
+  return 0;
+}
+
+void do_get_steps(struct put_op_in* put_op) {
+  int* log_address = put_fetch_address(put_op);
+
+  struct commit_area_struct areas[3];
+  areas[0].address = put_op->log_pt;
+  areas[0].length = put_op->log_entry_size;
+
+  areas[1].address = put_op->index_pt;
+  areas[1].length = put_op->index_entry_size;
+
+  areas[2].address = log_address;
+  areas[2].length = sizeof(int)
+
+  acquire_lock(areas, 3);
+
+  validate_put(put_op);
+
+  //TODO : handle cases if validateion has failed
+
+  execute_put(put_op);
+
+  release_lock();
+
 }
