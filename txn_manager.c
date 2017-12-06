@@ -2,9 +2,10 @@
 #include "declaration.h"
 #include "external.h"
 #include "log_file.h"
+#include "../hotpot/hotpot/dsnvm.h"
 
 void acquire_lock(struct commit_area_struct* areas, int n);
-vod release_lock(struct commit_area_struct* areas, int n) ;
+void release_lock(struct commit_area_struct* areas, int n) ;
 // void do_txn( struct put_op put_ops1[], struct get_op get_ops1[], struct update_op update_ops1[], struct delete_op delete_ops1[]) {
 //   // Convert external struct to internal struct.
 //   struct get_op_in get_ops[] = convert(get_ops1);
@@ -110,7 +111,7 @@ void do_put_steps(struct put_op_in* put_op) {
 
   execute_put(put_op);
 
-  release_lock();
+  release_lock(areas, 3);
 
 }
 
@@ -149,16 +150,16 @@ void do_get_steps(struct get_op_in* get_op) {
 
   execute_get(get_op);
 
-  release_lock();
+  release_lock(areas, 2);
 
 }
 
 void acquire_lock(struct commit_area_struct* areas, int n){
-  ret = msync(areas, n, DSNVM_BEGIN_XACT_FLAG);
+  int ret = msync(areas, n, DSNVM_BEGIN_XACT_FLAG);
   printf("Return value from acquire lock is is : %d",ret);
 }
 
 vod release_lock(struct commit_area_struct* areas, int n) {
-  ret = msync(areas, n, DSNVM_COMMIT_XACT_FLAG);
+  int ret = msync(areas, n, DSNVM_COMMIT_XACT_FLAG);
   printf("Return value from release lock is : %d",ret);
 }
