@@ -1,11 +1,41 @@
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <pthread.h>
+#include <time.h>
+#include <sys/mman.h>
+#include <sys/time.h>
+#include <sys/syscall.h>
+
+#include "../dsnvm-helper.h"
+#include "../dsnvm-common.h"
+#include "dsnvm.h"
 #include "declaration.h"
 #include "log_file.h"
-
-extern int* put_fetch_address(struct put_op_in* put_op);
+#include "index.h"
 
 int *log_size;
-int *log;
+struct kv_pair *log;
+
+void init_log(void) {
+
+	int fd = open("/mnt/hotpot/main_log", O_RDWR | O_CREAT);
+	if (fd < 0)
+		printf("failed to open file\n");
+	void* base = mmap(0, 40960, PROT_WRITE, MAP_PRIVATE, fd, 0);
+	if (base == MAP_FAILED)
+		printf("mmap failedi\n");
+	log_size = base;
+	log = log_size + sizeof(int);
+	*log_size = 0;
+	printf("log file is initialized\n");
+
+}
+
 // struct commit_area_struct[] fetch_addresses(struct put_op put_ops[], int n) {
 //   struct commit_area_struct areas[2*n + 1];
 //   int j = 1;
@@ -46,18 +76,27 @@ int *log;
     put_op->log_pt = &log[*log_size];
     put_op->log_entry_size = sizeof(struct kv_pair);
     put_op->index_pt = put_index_fetch_address(put_op->key);
+/*
+	if (put_op->index_pt == NULL)
+		printf("index slot returned null\n");
+	else
+		printf("%x\n", put_op->index_pt);
+*/  
+  //printf("used var in put is : %d\n",((index_entry*)put_op->index_pt)->used);
     put_op->index_entry_size = sizeof(struct index_entry);
     return log_size;
   }
 
   void get_fetch_address(struct get_op_in* get_op) {
-    get_op->index_pt = get_index_fetch_address(put_op->key);
+    get_op->index_pt = get_index_fetch_address(get_op->key);
+	//printf("The address fetched is : %x\n", get_op->index_pt);
+	//printf("used var in get is : %d\n",((index_entry*)get_op->index_pt)->used);
     get_op->index_entry_size = sizeof(struct index_entry);
-    if (get_op->index_pt == -1) {
+    if (get_op->index_pt == NULL) {
       get_op->status = -1;
       return;
     }
-    struct index_entry* entry = get_op->index_pt;
+    struct index_entry* entry = (struct index_entry*)get_op->index_pt;
 
     //TODO : Handle case when the key does not exist or is deleted
     if (entry->key != get_op->key)
@@ -96,6 +135,8 @@ int *log;
     entry->key = put_op->key;
     entry->offset = put_op->log_pt;
 
+   printf("Key Value inserted : %d, %d", entry->key, log_entry->value);
+
     return status;
   }
 
@@ -104,8 +145,8 @@ int *log;
 
     //TODO : handle case where the index entry does not exist
 
-    struct kv_pair* log_entry =(struct kv_pair*) put_op->log_pt;
+    struct kv_pair* log_entry =(struct kv_pair*) get_op->log_pt;
     get_op->value = log_entry->value;
+	printf("The pair in get is : %d, %d\n", log_entry->key, log_entry->value);
     return status;
   }
-}

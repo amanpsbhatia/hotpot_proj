@@ -19,8 +19,8 @@
 #include "log_file.h"
 #include "dsnvm.h"
 
-void acquire_lock(struct commit_area_struct* areas, int n);
-void release_lock(struct commit_area_struct* areas, int n) ;
+void acquire_lock(struct dsnvm_addr_len* areas, int n);
+void release_lock(struct dsnvm_addr_len* areas, int n) ;
 // void do_txn( struct put_op put_ops1[], struct get_op get_ops1[], struct update_op update_ops1[], struct delete_op delete_ops1[]) {
 //   // Convert external struct to internal struct.
 //   struct get_op_in get_ops[] = convert(get_ops1);
@@ -112,15 +112,15 @@ void do_put_steps(struct put_op_in* put_op) {
 	return;
   int* log_address = put_fetch_address(put_op);
 
-  struct commit_area_struct areas[3];
-  areas[0].address = put_op->log_pt;
-  areas[0].length = put_op->log_entry_size;
+  struct dsnvm_addr_len areas[3];
+  areas[0].addr = put_op->log_pt;
+  areas[0].len = put_op->log_entry_size;
 
-  areas[1].address = put_op->index_pt;
-  areas[1].length = put_op->index_entry_size;
+  areas[1].addr = put_op->index_pt;
+  areas[1].len = put_op->index_entry_size;
 
-  areas[2].address = log_address;
-  areas[2].length = sizeof(int);
+  areas[2].addr = log_address;
+  areas[2].len = sizeof(int);
 
   //acquire_lock(areas, 3);
 
@@ -140,32 +140,33 @@ int do_get_txn(struct get_op_s* get_op) {
   struct get_op_in* p2 = (struct get_op_in*)malloc(sizeof(struct get_op_in));
   p2->key = get_op->key;
   p2->status = 0;
-
-  do_get_steps(p2);
+  p2->log_entry_size = sizeof(struct kv_pair);
+  p2->index_entry_size = sizeof(index_entry);
+  int ret = do_get_steps(p2);
 
   get_op->status = p2->status;
   get_op->value = p2->value;
 
-  return 0;
+  return ret;
 }
 
-void do_get_steps(struct get_op_in* get_op) {
+int do_get_steps(struct get_op_in* get_op) {
   if(!get_op)
-	return ;
+	return -1;
   get_fetch_address(get_op);
   if (get_op->status == -1) {
-    printf("Key not found. Returning");
-    return;
+    printf("Key not found.\n");
+    return -1;
   }
 
-  struct commit_area_struct areas[2];
-  areas[0].address = get_op->log_pt;
-  areas[0].length = get_op->log_entry_size;
+ /* struct dsnvm_addr_len areas[2];
+  areas[0].addr = get_op->log_pt;
+  areas[0].len = get_op->log_entry_size;
 
-  areas[1].address = get_op->index_pt;
-  areas[1].length = get_op->index_entry_size;
-
-  acquire_lock(areas, 2);
+  areas[1].addr = get_op->index_pt;
+  areas[1].len = get_op->index_entry_size;
+*/
+//  acquire_lock(areas, 2);
 
   validate_get(get_op);
 
@@ -173,16 +174,17 @@ void do_get_steps(struct get_op_in* get_op) {
 
   execute_get(get_op);
 
-  release_lock(areas, 2);
+ // release_lock(areas, 2);
 
+  return 0;
 }
 
-void acquire_lock(struct commit_area_struct* areas, int n){
+void acquire_lock(struct dsnvm_addr_len* areas, int n){
   int ret = msync(areas, n, DSNVM_BEGIN_XACT_FLAG);
-  printf("Return value from acquire lock is is : %d",ret);
+  ret = msync(areas, n, DSNVM_COMMIT_XACT_FLAG);
 }
 
-void release_lock(struct commit_area_struct* areas, int n) {
+void release_lock(struct dsnvm_addr_len* areas, int n) {
   int ret = msync(areas, n, DSNVM_COMMIT_XACT_FLAG);
-  printf("Return value from release lock is : %d",ret);
+  acquire_lock(areas, n);
 }

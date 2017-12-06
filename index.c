@@ -14,16 +14,13 @@
 #include "../dsnvm-helper.h"
 #include "../dsnvm-common.h"
 #include "dsnvm.h"
-
-typedef struct index_entry {
-  int key;
-  int used;
-  int* offset;
-}index_entry;
+#include "index.h"
+#include "declaration.h"
 
 index_entry* index_start;
 
-static void init_index(void)
+
+ void init_index()
 {
     int mmap_len = 10000; // ARBIT
 
@@ -31,24 +28,30 @@ static void init_index(void)
      * Open Hotpot dataset named abc
      * You should be able to see some outputs in CD side.
      */
-    fd = open("/mnt/hotpot/index", O_RDWR | O_CREAT);
-    if (fd < 0)
-        die("Can not open file (1): %s", strerror(fd));
+    int fd = open("/mnt/hotpot/index", O_RDWR | O_CREAT);
+    if (fd < 0);
+    //    die("Can not open file (1): %s", strerror(fd));
 
     /* mmap Hotpot regions */
-    struct void* virt_hotpot = mmap(NULL, mmap_len, PROT_WRITE, MAP_SHARED, fd, 0);
-    if (virt_hotpot == MAP_FAILED)
-        die("Can not mmap (1): %s", strerror(errno));
+    void* virt_hotpot = mmap(NULL, mmap_len, PROT_WRITE, MAP_SHARED, fd, 0);
+    if (virt_hotpot == MAP_FAILED);
+    //    die("Can not mmap (1): %s", strerror(errno));
 
     /* Direct memory load/store in DSPM address space */
     index_start = (index_entry*)virt_hotpot;
+
+    int i;
+    for(i=0;i<100;i++){
+	((index_entry*)(index_start+i))->used = -1;
+    }
 }
 
 
 int* get_index_fetch_address(int key)
 {
-    index_entry* entry = index_start + hash_fn(key);
+    index_entry* entry = index_start;// + hash_fn(key);
     while(entry && entry->used != -1) {
+	//printf("in loop : %d, and %d, value = %d\n", entry->key, key, entry->offset);
         if(key == entry->key){
             return entry;
         }
@@ -60,7 +63,7 @@ int* get_index_fetch_address(int key)
 
 int* put_index_fetch_address(int key)
 {
-    index_entry* entry = index_start+hash_fn(key);
+    index_entry* entry = index_start; //+hash_fn(key);
     while(entry) {
         if(entry->used == -1){
             return entry;

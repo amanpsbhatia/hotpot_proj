@@ -7,8 +7,8 @@ struct _value {
 };
 
 struct kv_pair {
-  struct _key key;
-  struct _value value;
+  int  key;
+  int  value;
 };
 
 struct commit_area_struct {
@@ -21,6 +21,7 @@ typedef struct index_entry {
   int key;
   int* offset;
 }index_entry;
+
 //Client facing structs
 
 struct put_op_in {
