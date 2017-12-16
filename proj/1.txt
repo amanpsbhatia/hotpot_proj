@@ -1,0 +1,1 @@
+gcc -I../ txn_mn.c ran.c index.c log_file.c -lm -lpthread -o txn_mn.o -fomit-frame-pointer -freg-struct-return txn_mn.c
